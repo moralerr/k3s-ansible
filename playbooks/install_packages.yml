@@ -5,6 +5,8 @@
   vars:
     apt_packages:
       - git
+      - net-tools
+    docker_compose_version: "2.28.1"  # You can specify the version you need here
 
   tasks:
     - name: Update apt cache
@@ -49,3 +51,23 @@
         name: docker
         state: started
         enabled: yes
+
+    - name: Download Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-aarch64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create symbolic link for Docker Compose
+      file:
+        src: /usr/local/bin/docker-compose
+        dest: /usr/bin/docker-compose
+        state: link
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+      register: docker_compose_version_output
+
+    - name: Display Docker Compose version
+      debug:
+        msg: "Docker Compose version installed: {{ docker_compose_version_output.stdout }}"
