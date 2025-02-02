@@ -52,7 +52,8 @@ pipeline {
                     cat inventory/my-cluster/standalone-host.ini
                     echo "Updated group_vars/all.yml:"
                     cat inventory/my-cluster/group_vars/all.yml
-        '''
+                '''
+                stash includes: 'inventory/my-cluster/**', name: 'inventory-files'
             }
         }
         stage('Run Ansible Playbook (k3s)') {
@@ -69,6 +70,7 @@ pipeline {
                 }
             }
             steps {
+                unstash 'inventory-files'
                 sshagent(credentials: ['SSH_KEY']) {
                     sh """
                         export ANSIBLE_HOST_KEY_CHECKING=False
