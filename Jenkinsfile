@@ -48,7 +48,7 @@ pipeline {
                     sed -i 's/{{ K3S_TOKEN }}/'"$K3S_TOKEN"'/g' inventory/my-cluster/group_vars/all.yml
 
                     echo "Injecting ANSIBLE_USER into group_vars/all.yml..."
-                    sed -i 's/{{ ANSIBLE_USER }}/$ANSIBLE_USER/g' inventory/my-cluster/group_vars/all.yml
+                    sed -i "s/{{ ANSIBLE_USER }}/$ANSIBLE_USER/g" inventory/my-cluster/group_vars/all.yml
 
                     echo "Updated hosts.ini:"
                     cat inventory/my-cluster/hosts.ini
