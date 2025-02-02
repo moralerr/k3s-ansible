@@ -2,9 +2,8 @@
 
 pipeline {
     agent {
-        docker {
-            image 'moralerr/examples:jenkins-admin-agent-latest'
-            label 'standalone'
+        kubernetes {
+            inheritFrom 'maintenance'
         }
     }
     triggers {
@@ -58,7 +57,14 @@ pipeline {
             }
         }
         stage('Run Ansible Playbook (k3s)') {
+            agent {
+                docker {
+                    image 'moralerr/examples:jenkins-admin-agent-latest'
+                    label 'standalone'
+                }
+            }
             when {
+                beforeAgent true
                 expression {
                     params.HOSTS_FILE == 'inventory/my-cluster/hosts.ini'
                 }
@@ -75,14 +81,8 @@ pipeline {
         }
         stage('Run Ansible Playbook (standalone)') {
             when {
-                beforeAgent true
                 expression {
                     params.HOSTS_FILE == 'inventory/my-cluster/standalone-host.ini'
-                }
-            }
-            agent {
-                kubernetes {
-                    inheritFrom 'maintenance'
                 }
             }
             steps {
