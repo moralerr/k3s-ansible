@@ -45,7 +45,7 @@ pipeline {
                         allYaml.k3s_version = latestRelease
 
                         // 3) Write the updated map back to YAML
-                        writeYaml file: allFilePath, data: allYaml overwrite: true
+                        writeYaml file: allFilePath, data: allYaml, overwrite: true
 
                         // 4) Commit and push changes
                         sh 'git config user.name "moralerr"'
