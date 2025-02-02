@@ -7,6 +7,14 @@ pipeline {
             label 'standalone'
         }
     }
+    triggers {
+        cron('H H * * *')
+    }
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+    }
     parameters {
         choice(
             name: 'PLAYBOOK',
