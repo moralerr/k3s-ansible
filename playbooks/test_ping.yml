@@ -1,5 +1,5 @@
 - name: Test connectivity to remote hosts
-  hosts: node
+  hosts: all
   gather_facts: no
   tasks:
     - name: Ping remote hosts to verify connectivity

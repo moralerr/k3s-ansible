@@ -1,6 +1,6 @@
 ---
 - name: Update dependencies on all nodes
-  hosts: node
+  hosts: all
   become: yes
 
   tasks:

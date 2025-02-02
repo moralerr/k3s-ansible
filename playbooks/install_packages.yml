@@ -1,6 +1,6 @@
 ---
 - name: Install apt packages and Docker on Ubuntu server (aarch64 architecture)
-  hosts: standalone
+  hosts: all
   become: yes
   vars:
     apt_packages:

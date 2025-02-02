@@ -7,6 +7,18 @@ pipeline {
             label 'standalone'
         }
     }
+    parameters {
+        choice(
+            name: 'PLAYBOOK',
+            choices: ['playbooks/update_dependencies.yml', 'site.yml', 'playbooks/test_ping.yml'],
+            description: 'Pick a playbook to run'
+        )
+        choice(
+            name: 'HOSTS_FILE',
+            choices: ['inventory/my-cluster/hosts.ini', 'inventory/my-cluster/standalone-host.ini'],
+            description: 'Pick a hosts file to use'
+        )
+    }
     environment {
         // Retrieve secret values from Jenkins credentials (set these up in Jenkins)
         MASTER_IP     = credentials('MASTER_IP')
@@ -40,11 +52,11 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 sshagent(credentials: ['SSH_KEY']) {
-                    sh '''
+                    sh """
                         export ANSIBLE_HOST_KEY_CHECKING=False
                         echo "Running Ansible playbook with SSH key loaded..."
-                        ansible-playbook -i inventory/my-cluster/hosts.ini playbooks/update_dependencies.yml
-                    '''
+                        ansible-playbook -i ${params.HOSTS_FILE} ${params.PLAYBOOK}
+                    """
                 }
             }
         }
