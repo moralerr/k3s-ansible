@@ -43,7 +43,7 @@ pipeline {
                     sh '''
                         export ANSIBLE_HOST_KEY_CHECKING=False
                         echo "Running Ansible playbook with SSH key loaded..."
-                        ansible-playbook -i inventory/my-cluster/hosts.ini playbooks/update-dependencies.yml
+                        ansible-playbook -i inventory/my-cluster/hosts.ini playbooks/update_dependencies.yml
                     '''
                 }
             }
