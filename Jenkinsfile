@@ -49,7 +49,33 @@ pipeline {
         '''
             }
         }
-        stage('Run Ansible Playbook') {
+        stage('Run Ansible Playbook (k3s)') {
+            when {
+                expression {
+                    params.HOSTS_FILE == 'inventory/my-cluster/hosts.ini'
+                }
+            }
+            steps {
+                sshagent(credentials: ['SSH_KEY']) {
+                    sh """
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        echo "Running Ansible playbook with SSH key loaded..."
+                        ansible-playbook -i ${params.HOSTS_FILE} ${params.PLAYBOOK}
+                    """
+                }
+            }
+        }
+        stage('Run Ansible Playbook (standalone)') {
+            when {
+                expression {
+                    params.HOSTS_FILE == 'inventory/my-cluster/standalone-host.ini'
+                }
+            }
+            agent {
+                kubernetes {
+                    inheritFrom 'maintenance'
+                }
+            }
             steps {
                 sshagent(credentials: ['SSH_KEY']) {
                     sh """
