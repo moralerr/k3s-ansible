@@ -38,8 +38,8 @@ pipeline {
                     def compareResult = compareK3sVersions(latestRelease, currentVersion)
                     if (compareResult > 0) {
                         echo 'Newer version found. Updating all.yml...'
-                        def updatedContent = allFileContent.replaceFirst(
-                            /(?m)^k3s_version:.*/,
+                        String updatedContent = allFileContent.replaceFirst(
+                            '(?m)^k3s_version:.*',
                             "k3s_version: ${latestRelease}"
                         )
                         writeFile file: allFilePath, text: updatedContent
