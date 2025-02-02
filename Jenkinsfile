@@ -39,12 +39,13 @@ pipeline {
         }
         stage('Run Ansible Playbook') {
             steps {
-                // sh '''
-                //     echo "Running Ansible playbook..."
-                //     # For example, use the hosts.ini inventory (adjust as necessary)
-                //     ansible-playbook -i inventory/my-cluster/hosts.ini playbooks/site.yml
-                // '''
-                echo 'Running Ansible playbook...'
+                sshagent(credentials: ['SSH_KEY']) {
+                    sh '''
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        echo "Running Ansible playbook with SSH key loaded..."
+                        ansible-playbook -i inventory/my-cluster/hosts.ini test_ping.yml
+                    '''
+                }
             }
         }
     }

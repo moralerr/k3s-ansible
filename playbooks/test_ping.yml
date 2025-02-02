@@ -1,0 +1,6 @@
+- name: Test connectivity to remote hosts
+  hosts: node
+  gather_facts: no
+  tasks:
+    - name: Ping remote hosts to verify connectivity
+      ansible.builtin.ping:
