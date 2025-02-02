@@ -6,67 +6,78 @@ pipeline {
         }
     }
     environment {
-        // Make sure this credential ID has push access to the moralerr/k3s-ansible repo
+        // This credential ID must have push access to the moralerr/k3s-ansible repo
         GIT_CREDENTIALS = 'GITHUB_ADMIN_TOKEN_AS_PASS'
+        // Set the default branch you want to clone and push to
         GIT_BRANCH = 'master'
     }
     stages {
         stage('Check and Update K3s Version') {
             steps {
                 script {
+                    // 1) Fetch the latest K3s release from GitHub API
                     echo 'Fetching latest K3s release...'
                     def response = sh(
                         script: 'curl -s https://api.github.com/repos/k3s-io/k3s/releases/latest',
                         returnStdout: true
                     ).trim()
-
                     def json = new groovy.json.JsonSlurperClassic().parseText(response)
                     def latestRelease = json.tag_name
                     echo "Latest Release Tag: ${latestRelease}"
 
-                    echo 'Cloning moralerr/k3s-ansible...'
+                    // 2) Clone your repo using the specified branch & credentials
+                    echo "Cloning moralerr/k3s-ansible (branch: ${GIT_BRANCH})..."
                     git(
                         url: 'https://github.com/moralerr/k3s-ansible.git',
                         branch: GIT_BRANCH,
                         credentialsId: GIT_CREDENTIALS
                     )
 
-                    // 1) Read the entire file as raw text (preserves all lines)
+                    // 3) Read the entire file as raw text
                     def allFilePath = 'inventory/my-cluster/group_vars/all.yml'
                     def allFileContent = readFile file: allFilePath
 
-                    // 2) Extract the current version from the relevant line
+                    // 4) Extract the current version by scanning for a line starting with 'k3s_version:'
                     def currentVersion = ''
-                    allFileContent.eachLine { line ->
-                        if (line.trim().startsWith('k3s_version:')) {
-                            currentVersion = line.split(':')[1].trim()
+                    def lines = allFileContent.split('\n')
+                    lines.each { line ->
+                        // Trim each line to ignore leading spaces
+                        def trimmedLine = line.trim()
+                        // If line is something like "k3s_version: v1.27.1+k3s1"
+                        if (trimmedLine.startsWith('k3s_version:')) {
+                            // Split only on the first colon -> "k3s_version:" / "v1.27.1+k3s1"
+                            def parts = trimmedLine.split(':', 2)
+                            if (parts.size() > 1) {
+                                currentVersion = parts[1].trim()
+                            }
                         }
                     }
 
                     echo "Current k3s_version in all.yml: ${currentVersion ?: '(none found)'}"
 
-                    // 3) Compare versions using our helper
+                    // 5) Compare currentVersion to the latestRelease
                     def compareResult = compareK3sVersions(latestRelease, currentVersion)
                     if (compareResult > 0) {
                         echo 'Newer version found. Updating all.yml...'
 
-                        // 4) Replace only the line that starts with "k3s_version:"
-                        //    (?m) multiline mode so '^' matches start of each line
+                        // 6) Use a regex to replace just the line that begins with k3s_version:
+                        //    '(?m)' = multiline mode, '^\\s*' = optional leading whitespace
                         String updatedContent = allFileContent.replaceFirst(
-                            '(?m)^k3s_version:.*',
+                            '(?m)^\\s*k3s_version:.*',
                             "k3s_version: ${latestRelease}"
                         )
 
-                        // 5) Write updated content back, preserving all other lines
+                        // 7) Write updated content back to file
                         writeFile file: allFilePath, text: updatedContent
 
-                        // 6) Commit and push changes
+                        // 8) Commit and push changes
                         sh 'git config user.name "moralerr"'
                         sh 'git config user.email "moralerrusc@gmail.com"'
                         sh "git add ${allFilePath}"
                         sh "git commit -m 'Update k3s_version to ${latestRelease}'"
 
-                        // If push fails with "could not read Username," we embed creds in URL
+                        // 9) Push using HTTPS credentials
+                        // If you see "fatal: could not read Username", we embed creds in URL
                         withCredentials([usernamePassword(
                             credentialsId: env.GIT_CREDENTIALS,
                             usernameVariable: 'GIT_USER',
