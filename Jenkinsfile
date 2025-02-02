@@ -56,6 +56,11 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            cleanWs()
+        }
+    }
 }
 
 def compareK3sVersions(String ver1, String ver2) {
