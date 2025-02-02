@@ -32,6 +32,7 @@ pipeline {
         NODE_IP2      = credentials('NODE_IP2')
         STANDALONE_IP = credentials('STANDALONE_IP')
         K3S_TOKEN     = credentials('K3S_TOKEN')
+        ANSIBLE_USER     = credentials('ANSIBLE_USER')
     }
     stages {
         stage('Inject Inventory and Group Vars') {
@@ -45,6 +46,9 @@ pipeline {
 
                     echo "Injecting K3S_TOKEN into group_vars/all.yml..."
                     sed -i 's/{{ K3S_TOKEN }}/'"$K3S_TOKEN"'/g' inventory/my-cluster/group_vars/all.yml
+
+                    echo "Injecting ANSIBLE_USER into group_vars/all.yml..."
+                    sed -i 's/{{ ANSIBLE_USER }}/$ANSIBLE_USER/g' inventory/my-cluster/group_vars/all.yml
 
                     echo "Updated hosts.ini:"
                     cat inventory/my-cluster/hosts.ini
