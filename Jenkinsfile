@@ -19,21 +19,21 @@ pipeline {
         stage('Inject Inventory and Group Vars') {
             steps {
                 sh '''
-          echo "Injecting IP addresses into inventory files..."
-          sed -i 's/{{ MASTER_IP }}/'"$MASTER_IP"'/g' inventory/my-cluster/hosts.ini
-          sed -i 's/{{ NODE_IP1 }}/'"$NODE_IP1"'/g' inventory/my-cluster/hosts.ini
-          sed -i 's/{{ NODE_IP2 }}/'"$NODE_IP2"'/g' inventory/my-cluster/hosts.ini
-          sed -i 's/{{ STANDALONE_IP }}/'"$STANDALONE_IP"'/g' inventory/my-cluster/standalone-host.ini
+                    echo "Injecting IP addresses into inventory files..."
+                    sed -i "s/{{ MASTER_IP }}/$MASTER_IP/g" inventory/my-cluster/hosts.ini
+                    sed -i "s/{{ NODE_IP1 }}/$NODE_IP1/g" inventory/my-cluster/hosts.ini
+                    sed -i "s/{{ NODE_IP2 }}/$NODE_IP2/g" inventory/my-cluster/hosts.ini
+                    sed -i "s/{{ STANDALONE_IP }}/$STANDALONE_IP/g" inventory/my-cluster/standalone-host.ini
 
-          echo "Injecting K3S_TOKEN into group_vars/all.yml..."
-          sed -i 's/{{ K3S_TOKEN }}/'"$K3S_TOKEN"'/g' inventory/my-cluster/group_vars/all.yml
+                    echo "Injecting K3S_TOKEN into group_vars/all.yml..."
+                    sed -i 's/{{ K3S_TOKEN }}/'"$K3S_TOKEN"'/g' inventory/my-cluster/group_vars/all.yml
 
-          echo "Updated hosts.ini:"
-          cat inventory/my-cluster/hosts.ini
-          echo "Updated standalone-host.ini:"
-          cat inventory/my-cluster/standalone-host.ini
-          echo "Updated group_vars/all.yml:"
-          cat inventory/my-cluster/group_vars/all.yml
+                    echo "Updated hosts.ini:"
+                    cat inventory/my-cluster/hosts.ini
+                    echo "Updated standalone-host.ini:"
+                    cat inventory/my-cluster/standalone-host.ini
+                    echo "Updated group_vars/all.yml:"
+                    cat inventory/my-cluster/group_vars/all.yml
         '''
             }
         }
@@ -44,7 +44,7 @@ pipeline {
                 //     # For example, use the hosts.ini inventory (adjust as necessary)
                 //     ansible-playbook -i inventory/my-cluster/hosts.ini playbooks/site.yml
                 // '''
-                echo "Running Ansible playbook..."
+                echo 'Running Ansible playbook...'
             }
         }
     }
