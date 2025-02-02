@@ -67,8 +67,8 @@ pipeline {
         }
         stage('Run Ansible Playbook (standalone)') {
             when {
+                beforeAgent true
                 expression {
-                    beforeAgent true
                     params.HOSTS_FILE == 'inventory/my-cluster/standalone-host.ini'
                 }
             }
