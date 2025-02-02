@@ -8,6 +8,7 @@ pipeline {
     environment {
         // Make sure this credential ID has push access to the moralerr/k3s-ansible repo
         GIT_CREDENTIALS = 'GITHUB_ADMIN_TOKEN_AS_PASS'
+        GIT_BRANCH = 'main'
     }
     stages {
         stage('Check and Update K3s Version') {
@@ -26,8 +27,8 @@ pipeline {
                     echo 'Cloning moralerr/k3s-ansible...'
                     git(
                         url: 'https://github.com/moralerr/k3s-ansible.git',
-                        branch: 'test',
-                        credentialsId: env.GIT_CREDENTIALS
+                        branch: GIT_BRANCH,
+                        credentialsId: GIT_CREDENTIALS
                     )
 
                     // 1) Read the entire file as raw text (preserves all lines)
@@ -73,7 +74,7 @@ pipeline {
                         )]) {
                             sh """
                                 git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/moralerr/k3s-ansible.git
-                                git push origin test
+                                git push origin ${GIT_BRANCH}
                             """
                         }
 
