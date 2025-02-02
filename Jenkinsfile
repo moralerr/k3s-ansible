@@ -30,34 +30,47 @@ pipeline {
                         credentialsId: env.GIT_CREDENTIALS
                     )
 
-                    // 1) Read the current all.yml as a Map
+                    // 1) Read the entire file as raw text (preserves all lines)
                     def allFilePath = 'inventory/my-cluster/group_vars/all.yml'
-                    def allYaml = readYaml file: allFilePath
-                    // If k3s_version doesn't exist or is null, default to empty string
-                    def currentVersion = allYaml.k3s_version ?: ''
-                    echo "Current k3s_version in all.yml: ${currentVersion}"
+                    def allFileContent = readFile file: allFilePath
 
-                    // 2) Compare versions
+                    // 2) Extract the current version from the relevant line
+                    def currentVersion = ''
+                    allFileContent.eachLine { line ->
+                        if (line.trim().startsWith('k3s_version:')) {
+                            currentVersion = line.split(':')[1].trim()
+                        }
+                    }
+
+                    echo "Current k3s_version in all.yml: ${currentVersion ?: '(none found)'}"
+
+                    // 3) Compare versions using our helper
                     def compareResult = compareK3sVersions(latestRelease, currentVersion)
                     if (compareResult > 0) {
                         echo 'Newer version found. Updating all.yml...'
-                        // Update the YAML map
-                        allYaml.k3s_version = latestRelease
 
+                        // 4) Replace only the line that starts with "k3s_version:"
+                        //    (?m) multiline mode so '^' matches start of each line
+                        String updatedContent = allFileContent.replaceFirst(
+                            '(?m)^k3s_version:.*',
+                            "k3s_version: ${latestRelease}"
+                        )
 
-                        writeYaml file: allFilePath, data: allYaml, overwrite: true
+                        // 5) Write updated content back, preserving all other lines
+                        writeFile file: allFilePath, text: updatedContent
 
+                        // 6) Commit and push changes
                         sh 'git config user.name "moralerr"'
                         sh 'git config user.email "moralerrusc@gmail.com"'
                         sh "git add ${allFilePath}"
                         sh "git commit -m 'Update k3s_version to ${latestRelease}'"
 
+                        // If push fails with "could not read Username," we embed creds in URL
                         withCredentials([usernamePassword(
-                        credentialsId: env.GIT_CREDENTIALS,
-                        usernameVariable: 'GIT_USER',
-                        passwordVariable: 'GIT_PASS'
+                            credentialsId: env.GIT_CREDENTIALS,
+                            usernameVariable: 'GIT_USER',
+                            passwordVariable: 'GIT_PASS'
                         )]) {
-                            // Construct the remote URL with embedded creds
                             sh """
                                 git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/moralerr/k3s-ansible.git
                                 git push origin test
@@ -88,12 +101,12 @@ pipeline {
 //
 def compareK3sVersions(String ver1, String ver2) {
     // If the strings are null or empty, treat them as "0.0.0"
-    if (!ver1?.trim()) ver1 = "0.0.0"
-    if (!ver2?.trim()) ver2 = "0.0.0"
+    if (!ver1?.trim()) ver1 = '0.0.0'
+    if (!ver2?.trim()) ver2 = '0.0.0'
 
     // Strip any leading 'v'
-    ver1 = ver1.replaceFirst(/^v/, "")
-    ver2 = ver2.replaceFirst(/^v/, "")
+    ver1 = ver1.replaceFirst(/^v/, '')
+    ver2 = ver2.replaceFirst(/^v/, '')
 
     // Remove '+k3s...' if present
     ver1 = ver1.split('\\+')[0]
@@ -105,6 +118,7 @@ def compareK3sVersions(String ver1, String ver2) {
     int length = Math.max(parts1.size(), parts2.size())
 
     for (int i = 0; i < length; i++) {
+        // Gracefully handle non-numeric parts
         def v1 = (i < parts1.size() && parts1[i].isInteger()) ? parts1[i].toInteger() : 0
         def v2 = (i < parts2.size() && parts2[i].isInteger()) ? parts2[i].toInteger() : 0
 
