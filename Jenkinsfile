@@ -8,7 +8,7 @@ pipeline {
     environment {
         // Make sure this credential ID has push access to the moralerr/k3s-ansible repo
         GIT_CREDENTIALS = 'GITHUB_ADMIN_TOKEN_AS_PASS'
-        GIT_BRANCH = 'main'
+        GIT_BRANCH = 'master'
     }
     stages {
         stage('Check and Update K3s Version') {
