@@ -44,15 +44,25 @@ pipeline {
                         // Update the YAML map
                         allYaml.k3s_version = latestRelease
 
-                        // 3) Write the updated map back to YAML
+
                         writeYaml file: allFilePath, data: allYaml, overwrite: true
 
-                        // 4) Commit and push changes
                         sh 'git config user.name "moralerr"'
                         sh 'git config user.email "moralerrusc@gmail.com"'
                         sh "git add ${allFilePath}"
                         sh "git commit -m 'Update k3s_version to ${latestRelease}'"
-                        sh 'git push origin test'
+
+                        withCredentials([usernamePassword(
+                        credentialsId: env.GIT_CREDENTIALS,
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_PASS'
+                        )]) {
+                            // Construct the remote URL with embedded creds
+                            sh """
+                                git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/moralerr/k3s-ansible.git
+                                git push origin test
+                            """
+                        }
 
                         echo "Successfully updated k3s_version to ${latestRelease} and pushed changes."
                     } else {
