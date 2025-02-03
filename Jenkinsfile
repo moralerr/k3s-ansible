@@ -100,6 +100,22 @@ pipeline {
                 }
             }
         }
+         stage('Upgrade k3s') {
+            agent {
+                docker {
+                    image 'moralerr/examples:jenkins-admin-agent-latest'
+                    label 'standalone'
+                }
+            }
+            when {
+                changeset pattern: 'inventory/my-cluster/group_vars/all.yml', comparator: 'ANT'
+            }
+            steps {
+                unstash 'inventory-files'
+                echo "inventory/my-cluster/group_vars/all.yml was changed in this commit! Doing something extra..."
+                // Add the steps you want to run here
+            }
+        }
     }
     post {
         always {
