@@ -33,6 +33,8 @@ pipeline {
         STANDALONE_IP = credentials('STANDALONE_IP')
         K3S_TOKEN     = credentials('K3S_TOKEN')
         ANSIBLE_USER     = credentials('ANSIBLE_USER')
+        JENKINS_API_USER = credentials('JENKINS_API_USER')
+        JENKINS_API_TOKEN = credentials('JENKINS_API_TOKEN')
     }
     stages {
         stage('Inject Inventory and Group Vars') {
@@ -50,12 +52,18 @@ pipeline {
                     echo "Injecting ANSIBLE_USER into group_vars/all.yml..."
                     sed -i "s/{{ ANSIBLE_USER }}/$ANSIBLE_USER/g" inventory/my-cluster/group_vars/all.yml
 
+                    echo "Intecting Jenkins API secrets into setup_swarm_agent.yml..."
+                    sed -i "s/{{ JENKINS_API_USER }}/$JENKINS_API_USER/g" playbooks/setup_swarm_agent.yml
+                    sed -i 's/{{ JENKINS_API_TOKEN }}/'"$JENKINS_API_TOKEN"'/g' playbooks/setup_swarm_agent.yml
+
                     echo "Updated hosts.ini:"
                     cat inventory/my-cluster/hosts.ini
                     echo "Updated standalone-host.ini:"
                     cat inventory/my-cluster/standalone-host.ini
                     echo "Updated group_vars/all.yml:"
                     cat inventory/my-cluster/group_vars/all.yml
+                    echo "Updated setup_swarm_agent.yml:"
+                    cat playbooks/setup_swarm_agent.yml
                 '''
                 stash includes: 'inventory/my-cluster/**', name: 'inventory-files'
             }

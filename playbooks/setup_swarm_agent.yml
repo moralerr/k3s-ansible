@@ -1,0 +1,75 @@
+---
+- name: Setup Jenkins Swarm Agent on standalone node
+  hosts: all
+  become: yes
+  vars:
+    jenkins_master_url: "http://192.168.1.71:8080"  # Change to your master URL
+    swarm_client_url: "{{ jenkins_master_url }}/swarm/swarm-client.jar"
+    jenkins_user: {{ JENKINS_API_USER }}             # Replace with your Jenkins user for agents
+    jenkins_api_token: {{ JENKINS_API_TOKEN }}             # Replace with the corresponding API token
+    agent_labels: "standalone"        # A label for this agent
+    agent_name: "standalone-agent"    # Unique name for this agent
+    swarm_jar_dest: "/opt/swarm-client.jar"
+  tasks:
+
+  - name: Install Java (required for swarm client) on Debian
+    apt:
+      name: openjdk-17-jre-headless
+      state: present
+    when: ansible_os_family == "Debian"
+
+  - name: Install Java (required for swarm client) on RedHat
+    yum:
+      name: java-17-openjdk
+      state: present
+    when: ansible_os_family == "RedHat"
+
+  - name: Create directory for swarm client
+    file:
+      path: /opt
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+  - name: Download the Jenkins swarm client jar
+    get_url:
+      url: "{{ swarm_client_url }}"
+      dest: "{{ swarm_jar_dest }}"
+      mode: '0755'
+
+  - name: Create systemd unit file for Jenkins Swarm Agent
+    copy:
+      dest: /etc/systemd/system/jenkins-swarm-agent.service
+      content: |
+        [Unit]
+        Description=Jenkins Swarm Agent
+        After=network.target
+
+        [Service]
+        # You may choose to run this under a dedicated user instead of root.
+        ExecStart=/usr/bin/java -jar {{ swarm_jar_dest }} \
+          -master {{ jenkins_master_url }} \
+          -webSocket \
+          -username {{ jenkins_user }} \
+          -password {{ jenkins_api_token }} \
+          -name {{ agent_name }} \
+          -labels "{{ agent_labels }}"
+        Restart=always
+        RestartSec=10
+
+        [Install]
+        WantedBy=multi-user.target
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Reload systemd daemon
+    command: systemctl daemon-reload
+    changed_when: false
+
+  - name: Enable and start Jenkins Swarm Agent service
+    systemd:
+      name: jenkins-swarm-agent.service
+      enabled: yes
+      state: started
