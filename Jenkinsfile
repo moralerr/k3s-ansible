@@ -116,6 +116,7 @@ pipeline {
                 }
             }
             when {
+                beforeAgent true
                 changeset pattern: 'inventory/my-cluster/group_vars/all.yml', comparator: 'ANT'
             }
             steps {
