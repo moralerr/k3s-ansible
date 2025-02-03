@@ -85,6 +85,11 @@ pipeline {
                 expression {
                     params.HOSTS_FILE == 'inventory/my-cluster/hosts.ini'
                 }
+                not { 
+                    expression {
+                        params.UPGRADE_K3S == true
+                    }
+                 }
             }
             steps {
                 unstash 'inventory-files'
@@ -102,6 +107,11 @@ pipeline {
                 expression {
                     params.HOSTS_FILE == 'inventory/my-cluster/standalone-host.ini'
                 }
+                not { 
+                    expression {
+                        params.UPGRADE_K3S == true
+                    }
+                 }
             }
             steps {
                 sshagent(credentials: ['SSH_KEY']) {
