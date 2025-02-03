@@ -24,6 +24,11 @@ pipeline {
             choices: ['inventory/my-cluster/hosts.ini', 'inventory/my-cluster/standalone-host.ini'],
             description: 'Pick a hosts file to use'
         )
+        booleanParam(
+            name: 'UPGRADE_K3S', 
+            defaultValue: false, 
+            description: 'Upgrade k3s on the cluster'
+        )
     }
     environment {
         // Retrieve secret values from Jenkins credentials (set these up in Jenkins)
@@ -117,7 +122,12 @@ pipeline {
             }
             when {
                 beforeAgent true
-                changeset pattern: 'inventory/my-cluster/group_vars/all.yml', comparator: 'ANT'
+                anyOf {
+                    expression {
+                        params.UPGRADE_K3S == true
+                    }
+                    changeset pattern: 'inventory/my-cluster/group_vars/all.yml', comparator: 'ANT'
+                }
             }
             steps {
                 unstash 'inventory-files'
