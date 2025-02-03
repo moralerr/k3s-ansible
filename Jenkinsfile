@@ -122,15 +122,16 @@ pipeline {
                 unstash 'inventory-files'
                 echo "inventory/my-cluster/group_vars/all.yml was changed in this commit! Doing something extra..."
                 // Add the steps you want to run here
-            }
-        }
-         stage('Upgrade k3s') {
-            when {
-                changeset pattern: 'inventory/my-cluster/group_vars/all.yml', comparator: 'ANT'
-            }
-            steps {
-                echo "inventory/my-cluster/group_vars/all.yml was changed in this commit! Doing something extra..."
-                // Add the steps you want to run here
+                sh '''
+                    echo "Updated hosts.ini:"
+                    cat inventory/my-cluster/hosts.ini
+                    echo "Updated standalone-host.ini:"
+                    cat inventory/my-cluster/standalone-host.ini
+                    echo "Updated group_vars/all.yml:"
+                    cat inventory/my-cluster/group_vars/all.yml
+                    echo "Updated setup_swarm_agent.yml:"
+                    cat playbooks/setup_swarm_agent.yml
+                '''
             }
         }
     }
