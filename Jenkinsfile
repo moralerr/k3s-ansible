@@ -5,6 +5,9 @@ pipeline {
             label 'standalone'
         }
     }
+    triggers {
+        cron('0 9 * * 6')
+    }
     environment {
         // This credential ID must have push access to the moralerr/k3s-ansible repo
         GIT_CREDENTIALS = 'GITHUB_ADMIN_TOKEN_AS_PASS'
