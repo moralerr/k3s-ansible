@@ -124,6 +124,15 @@ pipeline {
                 // Add the steps you want to run here
             }
         }
+         stage('Upgrade k3s') {
+            when {
+                changeset pattern: 'inventory/my-cluster/group_vars/all.yml', comparator: 'ANT'
+            }
+            steps {
+                echo "inventory/my-cluster/group_vars/all.yml was changed in this commit! Doing something extra..."
+                // Add the steps you want to run here
+            }
+        }
     }
     post {
         always {
