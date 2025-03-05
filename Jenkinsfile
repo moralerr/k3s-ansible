@@ -123,7 +123,23 @@ pipeline {
                 }
             }
         }
-         stage('Upgrade k3s') {
+        stage('Run Ansible Playbook (test_ping)') {
+            when {
+                expression {
+                    params.PLAYBOOK == 'playbooks/test_ping.yml'
+                }
+            }
+            steps {
+                sshagent(credentials: ['SSH_KEY']) {
+                    sh """
+                        export ANSIBLE_HOST_KEY_CHECKING=False
+                        echo "Running test_ping playbook with SSH key loaded..."
+                        ansible-playbook -i ${params.HOSTS_FILE} ${params.PLAYBOOK}
+                    """
+                }
+            }
+        }
+        stage('Upgrade k3s') {
             agent {
                 docker {
                     image 'moralerr/examples:jenkins-admin-agent-latest'
