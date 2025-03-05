@@ -4,3 +4,9 @@
   tasks:
     - name: Ping remote hosts to verify connectivity
       ansible.builtin.ping:
+    - name: Check Python version
+      ansible.builtin.debug:
+        msg: "Python version: {{ ansible_python_version }}"
+    - name: Check Ansible version
+      ansible.builtin.debug:
+        msg: "Ansible version: {{ ansible_version.full }}"
