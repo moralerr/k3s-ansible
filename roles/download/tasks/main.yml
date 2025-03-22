@@ -28,9 +28,20 @@
       ansible.builtin.command:
         cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm64.txt -o /tmp/k3s/sha256sum.txt"
     
-    - name: Verify checksum
+    - name: Get expected checksum for k3s-arm64
       ansible.builtin.shell:
-        cmd: "cd /usr/local/bin && grep -q $(sha256sum k3s | awk '{print $1}') /tmp/k3s/sha256sum.txt"
+        cmd: "grep 'k3s-arm64' /tmp/k3s/sha256sum.txt | awk '{print $1}'"
+      register: expected_checksum
+    
+    - name: Get actual checksum of downloaded file
+      ansible.builtin.shell: 
+        cmd: "sha256sum /usr/local/bin/k3s | awk '{print $1}'"
+      register: actual_checksum
+    
+    - name: Compare checksums
+      ansible.builtin.assert:
+        that: "actual_checksum.stdout == expected_checksum.stdout"
+        msg: "Checksum verification failed. Expected: {{ expected_checksum.stdout }}, Got: {{ actual_checksum.stdout }}"
       
     - name: Set permissions
       ansible.builtin.file:
