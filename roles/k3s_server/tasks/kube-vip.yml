@@ -9,9 +9,18 @@
   when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
 
 - name: Download vip cloud provider manifest to first master
-  ansible.builtin.get_url:
-    url: "https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/{{ kube_vip_cloud_provider_tag_version | default('main') }}/manifest/kube-vip-cloud-controller.yaml"  # noqa yaml[line-length]
-    dest: "/var/lib/rancher/k3s/server/manifests/kube-vip-cloud-controller.yaml"
+  ansible.builtin.command:
+    cmd: "curl -sSL https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/{{ kube_vip_cloud_provider_tag_version | default('main') }}/manifest/kube-vip-cloud-controller.yaml -o /var/lib/rancher/k3s/server/manifests/kube-vip-cloud-controller.yaml"
+  register: download_result
+  retries: 3
+  delay: 5
+  until: download_result is succeeded
+  changed_when: false
+  when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
+  
+- name: Set proper permissions for downloaded file
+  ansible.builtin.file:
+    path: "/var/lib/rancher/k3s/server/manifests/kube-vip-cloud-controller.yaml"
     owner: root
     group: root
     mode: 0644

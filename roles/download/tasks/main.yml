@@ -1,13 +1,38 @@
 ---
 
 - name: Download k3s binary x64
-  get_url:
-    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s
-    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-amd64.txt
-    dest: /usr/local/bin/k3s
-    owner: root
-    group: root
-    mode: 0755
+  block:
+    - name: Download k3s binary x64
+      ansible.builtin.command:
+        cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s -o /usr/local/bin/k3s"
+      register: download_result
+      retries: 3
+      delay: 5
+      until: download_result is succeeded
+      
+    - name: Download checksums for verification
+      ansible.builtin.command:
+        cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-amd64.txt -o /tmp/k3s-checksums.txt"
+      register: checksum_download
+      retries: 3
+      delay: 5
+      until: checksum_download is succeeded
+      
+    - name: Verify downloaded k3s binary checksum
+      ansible.builtin.shell:
+        cmd: "grep ' k3s$' /tmp/k3s-checksums.txt | sha256sum -c -"
+      args:
+        chdir: /usr/local/bin
+      register: checksum_result
+      failed_when: checksum_result.rc != 0
+      changed_when: false
+      
+    - name: Set proper permissions for k3s binary
+      ansible.builtin.file:
+        path: /usr/local/bin/k3s
+        owner: root
+        group: root
+        mode: 0755
   when: ansible_facts.architecture == "x86_64"
 
 - name: Download k3s binary arm64
@@ -76,13 +101,38 @@
       ansible_facts.architecture is search("aarch64")
 
 - name: Download k3s binary armhf
-  get_url:
-    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-armhf
-    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm.txt
-    dest: /usr/local/bin/k3s
-    owner: root
-    group: root
-    mode: 0755
+  block:
+    - name: Download k3s binary armhf
+      ansible.builtin.command:
+        cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-armhf -o /usr/local/bin/k3s"
+      register: download_result
+      retries: 3
+      delay: 5
+      until: download_result is succeeded
+      
+    - name: Download checksums for verification
+      ansible.builtin.command:
+        cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm.txt -o /tmp/k3s-checksums.txt"
+      register: checksum_download
+      retries: 3
+      delay: 5
+      until: checksum_download is succeeded
+      
+    - name: Verify downloaded k3s binary checksum
+      ansible.builtin.shell:
+        cmd: "grep ' k3s-armhf$' /tmp/k3s-checksums.txt | sha256sum -c -"
+      args:
+        chdir: /usr/local/bin
+      register: checksum_result
+      failed_when: checksum_result.rc != 0
+      changed_when: false
+      
+    - name: Set proper permissions for k3s binary
+      ansible.builtin.file:
+        path: /usr/local/bin/k3s
+        owner: root
+        group: root
+        mode: 0755
   when:
     - ansible_facts.architecture is search("arm")
     - ansible_facts.userspace_bits == "32"

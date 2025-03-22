@@ -33,9 +33,17 @@
       mode: '0755'
 
   - name: Download the Jenkins swarm client jar
-    get_url:
-      url: "{{ swarm_client_url }}"
-      dest: "{{ swarm_jar_dest }}"
+    ansible.builtin.command:
+      cmd: "curl -sSL {{ swarm_client_url }} -o {{ swarm_jar_dest }}"
+    register: download_result
+    retries: 3
+    delay: 5
+    until: download_result is succeeded
+    changed_when: false
+    
+  - name: Set proper permissions for the Jenkins swarm client jar
+    ansible.builtin.file:
+      path: "{{ swarm_jar_dest }}"
       mode: '0755'
 
   - name: Create systemd unit file for Jenkins Swarm Agent
