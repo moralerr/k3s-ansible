@@ -52,10 +52,16 @@
         state: started
         enabled: yes
 
-    - name: Download Docker Compose
-      get_url:
-        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-aarch64"
-        dest: /usr/local/bin/docker-compose
+    - name: Download Docker Compose using curl
+      command: >
+        curl -sL "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-aarch64"
+        -o /usr/local/bin/docker-compose
+      args:
+        creates: /usr/local/bin/docker-compose
+
+    - name: Set permissions for Docker Compose
+      file:
+        path: /usr/local/bin/docker-compose
         mode: '0755'
 
     - name: Create symbolic link for Docker Compose

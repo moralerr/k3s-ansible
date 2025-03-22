@@ -31,9 +31,17 @@
       when: cilium_cli_installed.rc == 0
 
     - name: Get latest stable Cilium CLI version file
-      ansible.builtin.get_url:
-        url: "https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt"
-        dest: "/tmp/k3s/cilium-cli-stable.txt"
+      ansible.builtin.command:
+        cmd: "curl -sSL https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt -o /tmp/k3s/cilium-cli-stable.txt"
+      register: download_result
+      retries: 3
+      delay: 5
+      until: download_result is succeeded
+      changed_when: false
+      
+    - name: Set proper permissions for downloaded file
+      ansible.builtin.file:
+        path: "/tmp/k3s/cilium-cli-stable.txt"
         owner: root
         group: root
         mode: 0755
@@ -68,17 +76,28 @@
             cli_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
 
         - name: Download Cilium CLI and checksum
-          ansible.builtin.get_url:
-            url: "{{ cilium_base_url }}/cilium-linux-{{ cli_arch }}{{ item }}"
-            dest: "/tmp/k3s/cilium-linux-{{ cli_arch }}{{ item }}"
+          ansible.builtin.command:
+            cmd: "curl -sSL {{ cilium_base_url }}/cilium-linux-{{ cli_arch }}{{ item }} -o /tmp/k3s/cilium-linux-{{ cli_arch }}{{ item }}"
+          register: download_result
+          retries: 3
+          delay: 5
+          until: download_result is succeeded
+          changed_when: false
+          loop:
+            - ".tar.gz"
+            - ".tar.gz.sha256sum"
+          vars:
+            cilium_base_url: "https://github.com/cilium/cilium-cli/releases/download/{{ cli_ver.stdout }}"
+            
+        - name: Set proper permissions for downloaded files
+          ansible.builtin.file:
+            path: "/tmp/k3s/cilium-linux-{{ cli_arch }}{{ item }}"
             owner: root
             group: root
             mode: 0755
           loop:
             - ".tar.gz"
             - ".tar.gz.sha256sum"
-          vars:
-            cilium_base_url: "https://github.com/cilium/cilium-cli/releases/download/{{ cli_ver.stdout }}"
 
         - name: Verify the downloaded tarball
           ansible.builtin.shell: |
