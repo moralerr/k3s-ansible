@@ -11,13 +11,33 @@
   when: ansible_facts.architecture == "x86_64"
 
 - name: Download k3s binary arm64
-  get_url:
-    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-arm64
-    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm64.txt
-    dest: /usr/local/bin/k3s
-    owner: root
-    group: root
-    mode: 0755
+  block:
+    - name: Create temp directory
+      ansible.builtin.file:
+        path: /tmp/k3s
+        state: directory
+        mode: '0755'
+      
+    - name: Download k3s binary arm64
+      ansible.builtin.command:
+        cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-arm64 -o /usr/local/bin/k3s"
+      args:
+        creates: /usr/local/bin/k3s
+      
+    - name: Download checksums for verification
+      ansible.builtin.command:
+        cmd: "curl -sSL https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm64.txt -o /tmp/k3s/sha256sum.txt"
+    
+    - name: Verify checksum
+      ansible.builtin.shell:
+        cmd: "cd /usr/local/bin && grep -q $(sha256sum k3s | awk '{print $1}') /tmp/k3s/sha256sum.txt"
+      
+    - name: Set permissions
+      ansible.builtin.file:
+        path: /usr/local/bin/k3s
+        owner: root
+        group: root
+        mode: '0755'
   when:
     - ( ansible_facts.architecture is search("arm") and
         ansible_facts.userspace_bits == "64" ) or
