@@ -16,7 +16,12 @@ pipeline {
     parameters {
         choice(
             name: 'PLAYBOOK',
-            choices: ['playbooks/update_dependencies.yml', 'site.yml', 'playbooks/test_ping.yml'],
+            choices: [
+                'playbooks/update_dependencies.yml',
+                'site.yml',
+                'playbooks/test_ping.yml',
+                'playbooks/reboot.yml'
+            ],
             description: 'Pick a playbook to run'
         )
         choice(
