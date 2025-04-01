@@ -49,6 +49,7 @@ pipeline {
     stages {
         stage('Inject Inventory and Group Vars') {
             steps {
+                sh 'ansible-galaxy collection install -r ./collections/requirements.yml'
                 sh '''
                     echo "Injecting IP addresses into inventory files..."
                     sed -i "s/{{ MASTER_IP }}/$MASTER_IP/g" inventory/my-cluster/hosts.ini
