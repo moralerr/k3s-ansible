@@ -20,7 +20,8 @@ pipeline {
                 'playbooks/update_dependencies.yml',
                 'site.yml',
                 'playbooks/test_ping.yml',
-                'playbooks/reboot.yml'
+                'playbooks/reboot.yml',
+                'playbooks/setup_swarm_agent.yml',
             ],
             description: 'Pick a playbook to run'
         )
@@ -79,7 +80,7 @@ pipeline {
                 stash includes: 'inventory/my-cluster/**', name: 'inventory-files'
             }
         }
-        stage('Run Ansible Playbook (k3s)') {
+        stage('Run Ansible Playbook (target -> k3s nodes)') {
             agent {
                 docker {
                     image 'moralerr/examples:jenkins-admin-agent-latest'
@@ -95,7 +96,7 @@ pipeline {
                     expression {
                         params.UPGRADE_K3S == true
                     }
-                 }
+                }
             }
             steps {
                 unstash 'inventory-files'
@@ -108,7 +109,7 @@ pipeline {
                 }
             }
         }
-        stage('Run Ansible Playbook (standalone)') {
+        stage('Run Ansible Playbook (target -> standalone)') {
             when {
                 expression {
                     params.HOSTS_FILE == 'inventory/my-cluster/standalone-host.ini'
@@ -117,29 +118,13 @@ pipeline {
                     expression {
                         params.UPGRADE_K3S == true
                     }
-                 }
+                }
             }
             steps {
                 sshagent(credentials: ['SSH_KEY']) {
                     sh """
                         export ANSIBLE_HOST_KEY_CHECKING=False
                         echo "Running Ansible playbook with SSH key loaded..."
-                        ansible-playbook -i ${params.HOSTS_FILE} ${params.PLAYBOOK}
-                    """
-                }
-            }
-        }
-        stage('Run Ansible Playbook (test_ping)') {
-            when {
-                expression {
-                    params.PLAYBOOK == 'playbooks/test_ping.yml'
-                }
-            }
-            steps {
-                sshagent(credentials: ['SSH_KEY']) {
-                    sh """
-                        export ANSIBLE_HOST_KEY_CHECKING=False
-                        echo "Running test_ping playbook with SSH key loaded..."
                         ansible-playbook -i ${params.HOSTS_FILE} ${params.PLAYBOOK}
                     """
                 }
@@ -164,11 +149,11 @@ pipeline {
             steps {
                 unstash 'inventory-files'
                 sshagent(credentials: ['SSH_KEY']) {
-                    sh """
+                    sh '''
                         export ANSIBLE_HOST_KEY_CHECKING=False
                         echo "Running Ansible playbook with SSH key loaded..."
                         ansible-playbook -i inventory/my-cluster/hosts.ini site.yml
-                    """
+                    '''
                 }
             }
         }
