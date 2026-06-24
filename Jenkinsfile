@@ -6,9 +6,9 @@ pipeline {
             inheritFrom 'maintenance'
         }
     }
-    triggers {
-        cron('H H * * *')
-    }
+    // triggers {
+    //     cron('H H * * *')
+    // }
     options {
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '10'))
